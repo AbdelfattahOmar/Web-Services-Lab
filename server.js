@@ -1,60 +1,43 @@
-const express = require('express')
-const colors = require('colors')
-const dotenv = require('dotenv').config()
-const connectDB = require('./config/db')
-const hateoasLinker = require('express-hateoas-links')
+const { ApolloServer, gql } = require('apollo-server')
 
-connectDB()
-const app = express()
-
-app.use(express.json())
-app.use(hateoasLinker)
-
-app.use(express.urlencoded({ extended: false }))
-
-app.use('/api/articles', require('./routes/article'))
-app.use('/api/users', require('./routes/user'))
-app.use('/api/comments', require('./routes/comment'))
-
-// hateoasLinker(app);
-app.get('/', function (req, res) {
-  // create an example JSON Schema
-  var personSchema = {
-    name: 'Abdelfattah',
-    description:
-      'This JSON Schema defines the parameters required to create a Person object',
-    properties: {
-      name: {
-        title: 'Abdelfattah',
-        description: 'Hello',
-        type: 'string',
-        maxLength: 30,
-        minLength: 1,
-        required: true,
-      },
-      jobTitle: {
-        title: 'Job Title',
-        type: 'string',
-      },
-      telephone: {
-        title: 'Telephone Number',
-        description: 'Please enter telephone number including country code',
-        type: 'string',
-        required: true,
-      },
-    },
+// A schema is a collection of type definitions (hence "typeDefs")
+// that together define the "shape" of queries that are executed against
+// your data.
+const typeDefs = gql`
+  type Book {
+    title: String
+    author: String
   }
 
-  // call res.json as normal but pass second param as array of links
-  res.json(personSchema, [
-    { rel: 'self', method: 'GET', href: 'http://127.0.0.1' },
-    {
-      rel: 'create',
-      method: 'POST',
-      title: 'Create Person',
-      href: 'http://127.0.0.1/person',
-    },
-  ])
+  type Query {
+    books: [Book]
+  }
+`
+
+const books = [
+  {
+    title: 'The Awakening',
+    author: 'Kate Chopin',
+  },
+  {
+    title: 'City of Glass',
+    author: 'Paul Auster',
+  },
+]
+
+const resolvers = {
+  Query: {
+    books: () => books,
+  },
+}
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  csrfPrevention: true,
 })
 
-app.listen(8000, () => console.log(`Connected to Server`.white.bgBlue))
+// The `listen` method launches a web server.
+server.listen(8000).then(({ url }) => {
+  console.log(`🚀  Server ready at ${url}`.white.bgBlue)
+})
